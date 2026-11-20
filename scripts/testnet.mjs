@@ -20,7 +20,7 @@ const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function post(url, payload) {
   const { stdout } = await run('curl', [
-    '-sS', '--connect-timeout', '6', '--max-time', '15', '-H', 'Content-Type: application/json',
+    '-sS', '--connect-timeout', '10', '--max-time', '29', '-H', 'Content-Type: application/json',
     '--data-binary', JSON.stringify(payload), url,
   ]);
   return JSON.parse(stdout);
@@ -99,7 +99,8 @@ console.log('Testnet balance confirmed');
 
 const budget = (estimate) => estimate + (estimate / 12n);
 async function transact(name, prepare, expected = 'success') {
-  if (!operations[name]) {
+  const resumed = operations[name] != null;
+  if (!resumed) {
     const request = await prepare();
     const [nonce, gasPrice] = await Promise.all([
       client.getTransactionCount({ address: account.address, blockTag: 'pending' }),
@@ -113,13 +114,15 @@ async function transact(name, prepare, expected = 'success') {
   }
   const { hash, raw } = operations[name];
   assert.ok(hash && raw, `Submission result unknown for ${name}`);
-  let existing;
-  try {
-    existing = await client.getTransaction({ hash });
-  } catch (error) {
-    if (error.name !== 'TransactionNotFoundError') throw error;
+  let receipt;
+  if (resumed) {
+    try {
+      receipt = await client.getTransactionReceipt({ hash });
+    } catch (error) {
+      if (error.name !== 'TransactionReceiptNotFoundError') throw error;
+    }
   }
-  if (!existing) {
+  if (!receipt) {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const accepted = await client.sendRawTransaction({ serializedTransaction: raw });
@@ -133,9 +136,9 @@ async function transact(name, prepare, expected = 'success') {
         await pause(700 * (attempt + 1));
       }
     }
+    receipt = await client.waitForTransactionReceipt({ hash, timeout: 85000 });
   }
   console.log(name, hash);
-  const receipt = await client.waitForTransactionReceipt({ hash, timeout: 30000 });
   assert.equal(receipt.status, expected, name);
   return {
     hash, status: receipt.status, block: receipt.blockNumber.toString(),

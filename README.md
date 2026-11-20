@@ -1,6 +1,6 @@
 # Monad Risk Sentinel
 
-把硅谷银行事件及 Circle 的公开披露映射到 Monad 上一个可核验的 USDC Vault。页面包含示例借贷策略回放，以及 Monad 测试网上两个 ERC-4626 Vault 的对照。每个场景分别标注回执来源。
+把硅谷银行事件及 Circle 的公开披露映射到 Monad 上一个可核验的 USDC Vault。页面包含两条已在 Monad 测试网核验的路径，分别展示借贷策略切换，以及两个 ERC-4626 Vault 对同一信号的不同响应。
 
 **From real-world events to on-chain risk signals on Monad.**
 
@@ -9,6 +9,8 @@
 [打开演示页](https://lashimao.github.io/monad-risk-sentinel/)
 
 页面默认打开借贷风控回放。测试账户以 100 tUSD 抵押，借出 50 tCREDIT。Registry 发布限制信号后，示例借贷池将最大 LTV 从 75% 调低至 45%，停止新增借款。债务仍高于上限时，提取抵押品被拒。还款 20 tCREDIT 后可以提取 20 tUSD，最终抵押 80、债务 30。
+
+[LTV 收紧](https://testnet.monadvision.com/tx/0x2913b66395476729fe1e1ea43c9a886b2b249534d41aaa45b3e23619c6abcb0a) · [新增借款回退](https://testnet.monadvision.com/tx/0x4f3dc21ecfa9e930a2a15549b2eb12e778f0413175d276981a4283dba51d0e09) · [超限提取回退](https://testnet.monadvision.com/tx/0xb3fffdbd566293304d268c2e70032a73132b290462a2df4a02b1e3256990eb38) · [还款成功](https://testnet.monadvision.com/tx/0xb0b321c17202cbc78e0fce2d32e827520a176b5a837782dd62dc84f0715254a2) · [提取成功](https://testnet.monadvision.com/tx/0xa02ce10ce956a54a56ffa0ac106ac55790d2d4d551ee55ec9aeaaeaf29196dca)
 
 切到「双 Vault 策略」可查看原来的对照。同一份风险状态会让采用限制策略的 Vault 拒绝新增存款，采用观察策略的 Vault 仍可存入。限制期间，原 Vault 中的测试资产仍可提取。
 
@@ -22,7 +24,7 @@
 
 - `evidence/svb-usdc.json` 保存 2023 年历史事件、来源和研究结论。Registry 中的 Keccak-256 对应这份原始文件的字节，支持完整性复核。
 - `evidence/monad-exposure.json` 保存 Monad 主网 Hyperithm USDC Apex 的当前底层资产映射和 Morpho REST 索引快照。运行 `npm run snapshot` 可更新。总资产是 USDC 计价口径，包含已配置到市场的资产。
-- `evidence/testnet-receipts.json` 保存双 Vault 回执，借贷脚本在完成链上回读后会生成 `evidence/lending-testnet-receipts.json`，其中包含按区块查询的 LTV、抵押品和债务。
+- `evidence/testnet-receipts.json` 保存双 Vault 回执，`evidence/lending-testnet-receipts.json` 保存借贷回执及按区块验证的 LTV、抵押品和债务。
 
 ## 验证
 
