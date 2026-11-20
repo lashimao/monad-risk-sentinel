@@ -1,0 +1,6 @@
+{
+  "caseId": "SVB-USDC-2023",
+  "mode": "historical-replay",
+  "replayDecision": "DEMO_BASELINE_OPEN",
+  "note": "演示初始状态，由操作者设定。"
+}

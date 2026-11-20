@@ -1,0 +1,21 @@
+{
+  "name": "monad-risk-sentinel",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node scripts/test.mjs",
+    "build": "node scripts/build.mjs",
+    "deploy:testnet": "node scripts/testnet.mjs",
+    "serve": "python3 -m http.server 8789 --bind 127.0.0.1 --directory dist",
+    "snapshot": "node scripts/snapshot.mjs"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "5.4.0",
+    "viem": "2.51.3"
+  },
+  "devDependencies": {
+    "@foundry-rs/anvil": "1.7.1",
+    "solc": "0.8.30"
+  }
+}

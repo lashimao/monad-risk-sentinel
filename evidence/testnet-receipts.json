@@ -1,0 +1,74 @@
+{
+  "network": "Monad Testnet",
+  "chainId": 10143,
+  "reporter": "0x7E80cEd1e72eF782e012AC2ea693b3fb21d3BB35",
+  "contracts": {
+    "registry": {
+      "hash": "0x4bc63d7b7044117bb32270e940089853c62b67945dc960afb4767d54378fa022",
+      "status": "success",
+      "block": "81500239",
+      "address": "0xe0636446e5a0903f8b96baa9bb4a26ded3973c5b"
+    },
+    "token": {
+      "hash": "0xafe8efc54e1d66a16b1cb83d270b609f595aafd323a12a5e8c2667dfac9ae16e",
+      "status": "success",
+      "block": "81500317",
+      "address": "0x059b23192c3f7b2d62e7c2a8c4dab2cd28734a2e"
+    },
+    "protectedVault": {
+      "hash": "0x4ebabfbe9989cef2564fb29350fd208d1987e6fb243b4b25a13a9089f783ef09",
+      "status": "success",
+      "block": "81500396",
+      "address": "0x5924f6510dcebed7fa6b6dbbc2e4008c54009cf3"
+    },
+    "observerVault": {
+      "hash": "0xe1dc58b8ce1e138afa2e3f3d6cda13f8fafc4ce7611051a4baf334bdcddbfede",
+      "status": "success",
+      "block": "81500475",
+      "address": "0x427b2509b32b3962ea159da4ac46036a6fd4ddb7"
+    }
+  },
+  "transactions": {
+    "baseline": {
+      "hash": "0xaedbaae84dfae4f1a592d936cd1a0ab725c3551a26859159e42d67625bc079d3",
+      "status": "success",
+      "block": "81500570"
+    },
+    "before": {
+      "hash": "0xaa977bc897b23c180f53fd78229d59fb5bacd7dcdb7c0df5b2bedc163af66178",
+      "status": "success",
+      "block": "81500719"
+    },
+    "alert": {
+      "hash": "0xe725138dd87681e7f6c74ce4a064a62848c00a0e4d84702a34762884632eadda",
+      "status": "success",
+      "block": "81500798"
+    },
+    "blocked": {
+      "hash": "0xe5cb4d0765134cbcd35c8e3a7523e904ee666f0b52f7946b26103819e841248d",
+      "status": "reverted",
+      "block": "81500853"
+    },
+    "observe": {
+      "hash": "0xf7ebda132c20e632f08e7034f5fbdf609b775d0a4dd7a8820fdd39c924da90ff",
+      "status": "success",
+      "block": "81501024"
+    },
+    "exit": {
+      "hash": "0x33176713b93b524beb06fef780fe1a59d6326721de9779f3f9a5cbb99ba3016a",
+      "status": "success",
+      "block": "81501119"
+    }
+  },
+  "evidenceHash": "0xa3f4df39db59800dcd68f9f1735f221eb7e340d7d1144516e056a3b2ce28c962",
+  "verified": {
+    "revision": 2,
+    "status": 2,
+    "blockTime": 1795240384,
+    "validUntil": 1795758689,
+    "protectedAssets": "7000000",
+    "observerAssets": "2000000",
+    "protectedDepositsAllowed": false,
+    "observerDepositsAllowed": true
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "chainId": 143,
+  "network": "Monad Mainnet",
+  "vaultName": "Hyperithm USDC Apex",
+  "vaultVersion": "Morpho Vault V2",
+  "vaultAddress": "0x78999cc96d2Ba0341588C60CcB0E91c6C33CF371",
+  "curator": "0x75178137D3B4B9A0F771E0e149b00fB8167BA325",
+  "assetSymbol": "USDC",
+  "assetAddress": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+  "decimals": 6,
+  "totalAssetsRaw": "32538571919483",
+  "lastIndexedBlock": "124072329",
+  "allocatedAssetsRaw": "32538564295191",
+  "idleAssetsRaw": "7624292",
+  "amountLabel": "约 3,254 万 USDC",
+  "sourceLabel": "Morpho API 总资产快照",
+  "measurement": "Vault 总资产按底层 USDC 计价，包含市场配置。它不是闲置余额、SVB 敞口金额或预计损失。",
+  "snapshotStatus": "区块号由 Morpho 索引返回，未通过独立主网 RPC 回读。",
+  "sources": [
+    "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+    "https://api.morpho.org/v0/vaults-v2/143:0x78999cc96d2Ba0341588C60CcB0E91c6C33CF371",
+    "https://api.morpho.org/v1/vaults-v2/143:0x78999cc96d2Ba0341588C60CcB0E91c6C33CF371/state",
+    "https://app.morpho.org/monad/vault/0x78999cc96d2Ba0341588C60CcB0E91c6C33CF371/hyperithm-usdc-apex"
+  ]
+}
