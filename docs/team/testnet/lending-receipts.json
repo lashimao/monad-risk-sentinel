@@ -1,0 +1,92 @@
+{
+  "network": "Monad Testnet",
+  "chainId": 10143,
+  "reporter": "0x7E80cEd1e72eF782e012AC2ea693b3fb21d3BB35",
+  "contracts": {
+    "registry": {
+      "hash": "0xd83a886193f427bdb401c9bfaf6d8a2a5b4e96e05569cf6f9e492e481d047cd6",
+      "status": "success",
+      "block": "81505363",
+      "address": "0x522b6304ffef42f2c936cb9fe84522ae0f634b20"
+    },
+    "collateral": {
+      "hash": "0xafe8efc54e1d66a16b1cb83d270b609f595aafd323a12a5e8c2667dfac9ae16e",
+      "status": "success",
+      "block": "81500317",
+      "address": "0x059b23192c3f7b2d62e7c2a8c4dab2cd28734a2e"
+    },
+    "credit": {
+      "hash": "0x96c0dd44f3839ee3c4f681b9387a8e03b9cbcf23e52f3f2613acd1e4076f01fa",
+      "status": "success",
+      "block": "81506797",
+      "address": "0xa185da1bd0ba938cabc626d92a2fffbce3fa6ec9"
+    },
+    "pool": {
+      "hash": "0xd2d7a4484fb22a646c23a67882bfd25781200a4820621cc8bcc0edfd55b10c34",
+      "status": "success",
+      "block": "81506929",
+      "address": "0x04bb684ab2db5546f9c1eaf8244e843bc9f1e97d"
+    }
+  },
+  "transactions": {
+    "baseline": {
+      "hash": "0x3fd4475c6dc911c460ee9c8ec1c3a93e47b1fdfb7ec3515ac7412c13e4c93804",
+      "status": "success",
+      "block": "81509594"
+    },
+    "collateralDeposit": {
+      "hash": "0x0501dd7e4e86f3b9c7988d8a8fe73610ecda70aa6e4819b168e8706df92c0956",
+      "status": "success",
+      "block": "81509928"
+    },
+    "borrow": {
+      "hash": "0x1f3d5c0b7a74cebabf65153610a3a8b5c4e350ad935da1c6f3b2bd4004e77bdd",
+      "status": "success",
+      "block": "81510040"
+    },
+    "alert": {
+      "hash": "0x2913b66395476729fe1e1ea43c9a886b2b249534d41aaa45b3e23619c6abcb0a",
+      "status": "success",
+      "block": "81510152"
+    },
+    "blockedBorrow": {
+      "hash": "0x4f3dc21ecfa9e930a2a15549b2eb12e778f0413175d276981a4283dba51d0e09",
+      "status": "reverted",
+      "block": "81510196"
+    },
+    "blockedExit": {
+      "hash": "0xb3fffdbd566293304d268c2e70032a73132b290462a2df4a02b1e3256990eb38",
+      "status": "reverted",
+      "block": "81510241"
+    },
+    "repay": {
+      "hash": "0xb0b321c17202cbc78e0fce2d32e827520a176b5a837782dd62dc84f0715254a2",
+      "status": "success",
+      "block": "81510461"
+    },
+    "exit": {
+      "hash": "0xa02ce10ce956a54a56ffa0ac106ac55790d2d4d551ee55ec9aeaaeaf29196dca",
+      "status": "success",
+      "block": "81510569"
+    }
+  },
+  "evidenceHash": "0xa3f4df39db59800dcd68f9f1735f221eb7e340d7d1144516e056a3b2ce28c962",
+  "before": {
+    "ltvBps": 7500,
+    "borrowingAllowed": true,
+    "collateralRaw": "100000000",
+    "debtRaw": "50000000"
+  },
+  "during": {
+    "ltvBps": 4500,
+    "borrowingAllowed": false,
+    "collateralRaw": "100000000",
+    "debtRaw": "50000000"
+  },
+  "after": {
+    "ltvBps": 4500,
+    "borrowingAllowed": false,
+    "collateralRaw": "80000000",
+    "debtRaw": "30000000"
+  }
+}

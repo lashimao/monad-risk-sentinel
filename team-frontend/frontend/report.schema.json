@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sentinel risk v1 report (integration proposal)",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "simulation",
+    "asset",
+    "event",
+    "relations",
+    "evidence",
+    "market",
+    "risk",
+    "suggestedPolicy",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sentinel-risk-v1"
+    },
+    "simulation": {
+      "type": "boolean"
+    },
+    "asset": {
+      "type": "object",
+      "required": [
+        "symbol",
+        "address"
+      ],
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "address": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "required": [
+        "eventType",
+        "entity",
+        "region",
+        "occurredAt",
+        "sourceType",
+        "confidenceBps"
+      ],
+      "properties": {
+        "eventType": {
+          "enum": [
+            "SANCTIONS",
+            "BANKING_RESTRICTION",
+            "CUSTODIAN_RISK",
+            "REDEMPTION_PAUSED",
+            "CAPITAL_CONTROL",
+            "CONFLICT_ESCALATION"
+          ]
+        },
+        "entity": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "occurredAt": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sourceType": {
+          "type": "string"
+        },
+        "confidenceBps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        }
+      }
+    },
+    "relations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "from",
+          "to",
+          "evidenceId",
+          "status"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "evidenceId": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "EVIDENCED",
+              "UNVERIFIED",
+              "HYPOTHESIS",
+              "SIMULATION"
+            ]
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "relationStatus",
+          "title",
+          "body"
+        ]
+      }
+    },
+    "market": {
+      "type": "object",
+      "required": [
+        "priceBefore",
+        "priceAfter",
+        "liquidityBefore",
+        "liquidityAfter",
+        "collateralExposureBps"
+      ]
+    },
+    "risk": {
+      "type": "object",
+      "required": [
+        "riskLevel",
+        "riskLevelCode",
+        "geopoliticalScore",
+        "exposureScore",
+        "transmissionScore",
+        "reasonCode",
+        "updatedAt",
+        "validUntil",
+        "attestor"
+      ],
+      "properties": {
+        "riskLevel": {
+          "enum": [
+            "UNKNOWN",
+            "GREEN",
+            "WATCH",
+            "YELLOW",
+            "ORANGE",
+            "RED"
+          ]
+        },
+        "riskLevelCode": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "geopoliticalScore": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "exposureScore": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "transmissionScore": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "reasonCode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updatedAt": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "validUntil": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "attestor": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "suggestedPolicy": {
+      "type": "object",
+      "required": [
+        "ltvBeforeBps",
+        "ltvAfterBps",
+        "borrow",
+        "repay",
+        "withdrawCollateral"
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { keccak256, toHex } from 'viem';
 
@@ -41,6 +41,29 @@ if (lendingReceipts) {
 const payload = JSON.stringify({
   evidence, evidenceHash, exposure: JSON.parse(rawExposure), receipts, lendingReceipts,
 }).replaceAll('<', '\\u003c');
-await mkdir(new URL('dist/', root), { recursive: true });
-await writeFile(new URL('dist/sentinel.html', root), template.replace('__DEMO_DATA__', () => payload));
-console.log(receipts ? 'Built offline demo with verified testnet receipts' : 'Built offline local demo');
+const dist = new URL('dist/', root);
+const team = new URL('team/', dist);
+await mkdir(dist, { recursive: true });
+await writeFile(new URL('sentinel.html', dist), template.replace('__DEMO_DATA__', () => payload));
+await cp(new URL('team-frontend/frontend/', root), team, { recursive: true });
+const teamData = new URL('testnet/', team);
+await mkdir(teamData, { recursive: true });
+await Promise.all([
+  copyFile(new URL('evidence/svb-usdc.json', root), new URL('svb-usdc.json', teamData)),
+  copyFile(new URL('evidence/monad-exposure.json', root), new URL('monad-exposure.json', teamData)),
+]);
+if (lendingReceipts) {
+  await copyFile(new URL('evidence/lending-testnet-receipts.json', root), new URL('lending-receipts.json', teamData));
+} else {
+  // Overwrite any previous build's fixture while keeping the simulator usable.
+  await writeFile(new URL('lending-receipts.json', teamData), 'null\n');
+}
+
+if (process.argv.includes('--pages')) {
+  assert.ok(receipts && lendingReceipts, 'Public demo requires verified Vault and lending receipts');
+  const docs = new URL('docs/', root);
+  await mkdir(docs, { recursive: true });
+  await copyFile(new URL('sentinel.html', dist), new URL('index.html', docs));
+  await cp(team, new URL('team/', docs), { recursive: true });
+}
+console.log('Built original replay and integrated team frontend');

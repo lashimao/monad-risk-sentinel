@@ -6,7 +6,10 @@
 
 ## 参赛演示
 
-[打开演示页](https://lashimao.github.io/monad-risk-sentinel/)
+- [打开团队前端完整版](https://lashimao.github.io/monad-risk-sentinel/team/#testnet-replay)
+- [打开原版链上回放](https://lashimao.github.io/monad-risk-sentinel/)
+
+完整版包含团队仪表盘、原引导模拟、真实借贷回执回放、借贷和双 Vault 两条测试网场景。团队前端基于 `69910fa`，项目内的三份回放数据由同一套 `evidence/` 生成。 [前端上游](https://github.com/doragogogo521-sketch/monad-risk-sentinel/tree/69910fa2c904ef14df895520cb1883f8582c9664/frontend)
 
 页面默认打开借贷风控回放。测试账户以 100 tUSD 抵押，借出 50 tCREDIT。Registry 发布限制信号后，示例借贷池将最大 LTV 从 75% 调低至 45%，停止新增借款。债务仍高于上限时，提取抵押品被拒。还款 20 tCREDIT 后可以提取 20 tUSD，最终抵押 80、债务 30。
 
@@ -18,7 +21,7 @@
 
 ## 本地演示
 
-运行 `npm ci --ignore-scripts` 和 `npm run build`，打开生成的 `dist/sentinel.html`。单文件页面可以离线演示。测试网交易链接需联网查看。
+运行 `npm ci --ignore-scripts` 和 `npm run build`，打开生成的 `dist/sentinel.html`。单文件页面可以离线演示。运行 `npm run serve`，打开 `http://127.0.0.1:8789/team/#testnet-replay` 可使用团队仪表盘。测试网交易链接需联网查看。
 
 两种资料来自不同的时间：
 
@@ -29,9 +32,10 @@
 ## 验证
 
 - `npm test` 用本地 Anvil 部署合约并验证授权、初始缺失、过期、过时版本、存款、铸造限制、提款、两种 Vault 策略及借贷状态迁移。
+- `npm --prefix team-frontend test` 验证团队前端原有政策与演示。
 - `npm run deploy:testnet` 使用专用测试账户，调用 Devnads 水龙头，并在 Monad Testnet 记录部署和演示回执。该脚本会优先回读已记录交易。账户和签名事务放在 Git 忽略的 `.testnet/` 目录。
 - `npm run deploy:lending-testnet` 使用独立的交易记录重放借贷案例。可用 `MONAD_TESTNET_RPC` 指定备用测试网 RPC，脚本会核验链 ID。
-- 再运行 `npm run build` 将可核验的回执嵌入离线页面。发布用的静态副本在 `docs/index.html`。
+- 再运行 `npm run build` 将可核验的回执嵌入离线页面。发布用的静态副本通过 `npm run build:pages` 更新到 `docs/`。
 
 ## MVP 边界
 

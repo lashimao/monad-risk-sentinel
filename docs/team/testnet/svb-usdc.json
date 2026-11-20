@@ -1,0 +1,28 @@
+{
+  "caseId": "SVB-USDC-2023",
+  "mode": "historical-replay",
+  "caseTitle": "硅谷银行倒闭 → USDC 储备风险",
+  "eventDate": "2023-03-10",
+  "institution": "Silicon Valley Bank",
+  "issuer": "Circle",
+  "asset": "USDC",
+  "disclosedReserveExposureUsd": 3300000000,
+  "disclosedReserveShareApproxPercent": 8,
+  "riskInterpretation": "Circle 的部分储备对单一银行存在可证实的取用风险。Vault 敞口体现对 USDC 的依赖，不能直接换算为潜在资产损失。",
+  "replayDecision": "HISTORICAL_REPLAY_RESTRICT_NEW_DEPOSITS",
+  "sources": [
+    {
+      "id": "circle",
+      "title": "Circle 储备风险复盘",
+      "url": "https://www.circle.com/pressroom/3-3-billion-of-usdc-reserve-risk-removed-dollar-de-peg-closes",
+      "supports": "Circle 披露 33 亿美元的 USDC 储备存于 SVB，约为总储备的 8%。"
+    },
+    {
+      "id": "fed",
+      "title": "美国财政部、美联储与 FDIC 联合声明",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20230312b.htm",
+      "supports": "2023 年 3 月 12 日公布措施，帮助 SVB 存款人自 3 月 13 日起提取全部存款。"
+    }
+  ],
+  "replayScope": "2023 年事件用于回放。Monad 主网 Vault 映射是之后的独立快照。测试网只使用无价值 tUSD 和两个示例 Vault。"
+}

@@ -1,0 +1,23 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),{webcrypto}=require('crypto');
+const html=fs.readFileSync('frontend/index.html','utf8');
+const ids=Array.from(html.matchAll(/id="([^"]+)"/g),m=>m[1]);assert.equal(new Set(ids).size,ids.length);
+const el=()=>({textContent:'',value:'10',disabled:false,hidden:false,dataset:{},className:'',classList:{toggle(){},remove(){}},setAttribute(){},removeAttribute(){},prepend(p){this.entries=(this.entries||[]).concat(p)},append(){},replaceChildren(){this.entries=[]},showModal(){this.open=true},close(){this.open=false},scrollIntoView(){},click(){}});
+const elements=Object.fromEntries(ids.map(x=>[x,el()]));
+const tabs=['borrow','repay','depositCollateral','withdrawCollateral'].map(x=>({...el(),dataset:{tab:x}}));const evidence=[0,1,2].map(x=>({...el(),dataset:{evidence:String(x)}}));const steps=Array.from({length:6},el);
+const doc={body:{dataset:{}},getElementById:x=>{assert(elements[x],x);return elements[x]},querySelectorAll:s=>({'[data-tab]':tabs,'[data-evidence]':evidence,'[data-step]':steps}[s]||[]),createTextNode:s=>s,createElement:el};
+const intervals=[];const c=vm.createContext({document:doc,window:{matchMedia:()=>({matches:true})},crypto:webcrypto,TextEncoder,Date,Number,JSON,Array,String,Blob,URL,Set,setTimeout,setInterval:fn=>intervals.push(fn)});vm.runInContext(fs.readFileSync('frontend/policy.js','utf8'),c);vm.runInContext(fs.readFileSync('frontend/app.js','utf8'),c);
+(async()=>{
+assert.equal(elements.ltv.textContent,75);assert.equal(elements.risk.textContent,'GREEN');assert.equal(elements.debt.textContent,'200.00');
+elements['guide-start'].onclick();assert.equal(elements.publish.disabled,true);await elements['guide-action'].onclick();assert.equal(elements.debt.textContent,'300.00');
+await elements['guide-action'].onclick();elements['evidence-next'].onclick();elements['evidence-next'].onclick();elements['evidence-next'].onclick();assert.equal(elements.publish.disabled,false);
+const pending=elements['guide-action'].onclick();assert.equal(elements.reset.disabled,true);elements.reset.onclick();await pending;
+assert.equal(elements.risk.textContent,'ORANGE');assert.equal(elements.ltv.textContent,45);assert.equal(elements['available-borrow'].textContent,'0.00');assert.match(elements.hash.textContent,/^0x[0-9a-f]{64}$/);
+await elements['guide-action'].onclick();assert.equal(elements.debt.textContent,'300.00');await elements['guide-action'].onclick();assert.equal(elements.debt.textContent,'250.00');await elements['guide-action'].onclick();assert.equal(elements.collateral.textContent,'900.00');assert.match(elements['guide-progress'].textContent,/6 \/ 6/);
+await elements['guide-action'].onclick();assert.equal(elements.risk.textContent,'UNKNOWN');assert.equal(elements['raw-risk'].textContent,'ORANGE');assert.equal(elements.ltv.textContent,45);
+tabs[3].onclick();elements.amount.value='800';elements.transact.onclick();assert.equal(elements.collateral.textContent,'900.00');assert.match(elements['transaction-feedback'].textContent,/抵押不足/);
+tabs[1].onclick();elements['max-amount'].onclick();assert.equal(elements.amount.value,'250.00');elements.transact.onclick();assert.equal(elements.debt.textContent,'0.00');tabs[3].onclick();elements['max-amount'].onclick();elements.transact.onclick();assert.equal(elements.collateral.textContent,'0.00');
+elements.reset.onclick();assert.equal(elements.risk.textContent,'GREEN');assert.equal(elements.ltv.textContent,75);assert.equal(elements.debt.textContent,'200.00');
+const original=c.crypto;c.crypto={subtle:{digest:async()=>{throw Error('failure')}}};await elements.publish.onclick();assert.equal(elements.risk.textContent,'GREEN');assert.equal(elements.ltv.textContent,75);assert.equal(elements.reset.disabled,false);c.crypto=original;
+await elements.publish.onclick();const record=JSON.parse(elements['assertion-json'].textContent);assert.equal(record.riskLevelCode,4);assert.equal(record.reasonCode,'CUSTODIAN_REDEMPTION_RESTRICTION');
+console.log('PASS: six-step lending demo, evidence, LTV reduction, rejected borrow, repayment, safe/unsafe withdrawal, expiry UNKNOWN, max amount, reset, failure recovery, record fields.');
+})().catch(e=>{console.error(e);process.exitCode=1});
