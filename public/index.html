@@ -34,7 +34,10 @@
     .node span[aria-hidden]{position:absolute;right:-12px;top:45%;z-index:1;width:24px;height:24px;border-radius:50%;text-align:center;background:var(--raised);border:1px solid var(--rule);color:var(--violet);line-height:20px}
     .map footer{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:11px 21px;border-top:1px solid var(--rule);color:var(--muted);font-size:13px}
     .map footer span{margin-right:auto}
-    .stage{margin-top:22px;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px}
+    .scenes{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+    .scenes button{padding:6px 12px;border:1px solid var(--rule);border-radius:7px;background:var(--surface);color:var(--muted);font-size:14px}
+    .scenes button[aria-pressed="true"]{color:var(--violet);border-color:var(--violet);background:#292338}
+    .stage{margin-top:12px;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px}
     .panel{border:1px solid var(--rule);border-radius:13px;background:var(--surface)}
     .panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:15px;padding:19px 22px 13px}
     .panel-head h2{font-size:19px}
@@ -119,17 +122,21 @@
       </footer>
     </section>
 
-    <section class="stage" aria-label="示例 Vault 响应">
+    <nav class="scenes" aria-label="选择演示">
+      <button id="choose-lending" type="button" aria-pressed="true">借贷风控</button>
+      <button id="choose-vault" type="button" aria-pressed="false">双 Vault 策略</button>
+    </nav>
+    <section class="stage" aria-label="示例协议响应">
       <article class="panel">
-        <div class="panel-head"><h2>同一信号，两种 Vault 策略</h2><strong id="signal" class="status">演示基线</strong></div>
+        <div class="panel-head"><h2 id="scenario-title">借贷风控</h2><strong id="signal" class="status">演示基线</strong></div>
         <p id="explain" class="board-description" aria-live="polite"></p>
         <div class="vaults">
           <div class="vault">
-            <div><h3>Vault A · 限制新增敞口</h3><p id="a-description"></p></div>
+            <div><h3 id="a-title"></h3><p id="a-description"></p></div>
             <span class="badge" id="a-status"></span>
           </div>
           <div class="vault">
-            <div><h3>Vault B · 仅观察信号</h3><p id="b-description"></p></div>
+            <div><h3 id="b-title"></h3><p id="b-description"></p></div>
             <span class="badge" id="b-status"></span>
           </div>
         </div>
@@ -151,7 +158,7 @@
     </section>
 
     <footer class="meta">
-      <span>仅在示例 Vault 中回放。测试资产 tUSD 无实际价值。</span>
+      <span>历史回放使用示例合约。tUSD 和 tCREDIT 均无实际价值。</span>
       <span>使用模型 gpt-6.2-sol · high</span>
     </footer>
   </main>
@@ -161,64 +168,114 @@
     const scenario = JSON.parse(document.querySelector('#demo-data').textContent);
     const find = (id) => document.getElementById(id);
     const explorer = 'https://testnet.monadvision.com/tx/';
-    const verified = scenario.receipts != null;
     const exposure = scenario.exposure;
-    find('mode').textContent = verified ? '历史回放 · Monad 测试网回执' : '历史回放 · 本地演示';
-    find('proof-title').textContent = verified ? '已核验测试网交易' : '本地演示步骤';
     find('exposure').textContent = exposure.amountLabel + ' · ' + exposure.sourceLabel;
     find('evidence').textContent = scenario.evidenceHash;
     find('download').href = 'data:application/json;charset=utf-8,' + encodeURIComponent(scenario.evidence);
-    const stages = [
-      { action:'回放风险信号', explain:'Vault A 在演示基线时允许存入，已存入 10 tUSD。' },
-      { action:'检查两笔存款', explain:'同一风险信号发布到 Registry。Vault A 禁止新增，Vault B 仍接收存款。' },
-      { action:'检查 Vault A 提取', explain:'Vault A 的 1 tUSD 新增存款失败。Vault B 的 2 tUSD 存款成功。' },
-      { action:'从头回放', explain:'风险信号有效期间，Vault A 仍成功提取 3 tUSD。' }
-    ];
-    const timeline = [
-      ['before','Vault A 初始存入 10 tUSD',0],
-      ['alert','Registry 发布风险信号',1],
-      ['blocked','Vault A 新增存款回退',2],
-      ['observe','Vault B 存入 2 tUSD',2],
-      ['exit','Vault A 提取 3 tUSD',3]
-    ];
+    const profiles = {
+      lending: {
+        title: '借贷策略响应',
+        receipts: scenario.lendingReceipts,
+        stages: [
+          { action:'回放风险信号', explain:'抵押 100 tUSD，已借出 50 tCREDIT。初始 LTV 上限为 75%。' },
+          { action:'检查借款与退出限制', explain:'Registry 更新为限制状态。借贷池读取新信号，LTV 上限从 75% 降到 45%。' },
+          { action:'核验还款与提取', explain:'新增借款回退。还款前，债务高于 45% 上限，提取抵押品也被拒。' },
+          { action:'从头回放', explain:'还款 20 tCREDIT 后，成功提取 20 tUSD。剩余抵押 80、债务 30，低于 45% 上限。' },
+        ],
+        timeline: [
+          ['collateralDeposit','存入 100 tUSD 抵押品',0],
+          ['borrow','初始借款 50 tCREDIT',0],
+          ['alert','Registry 发布限制信号',1],
+          ['blockedBorrow','新增借款回退',2,true],
+          ['blockedExit','超出 LTV 的提取回退',2,true],
+          ['repay','还款 20 tCREDIT',3],
+          ['exit','提取 20 tUSD 抵押品',3],
+        ],
+        rows(step) {
+          const restricted = step > 0;
+          return [
+            ['最大贷款价值比 LTV', step === 3 ? '抵押 80 tUSD · 债务 30 tCREDIT' : '抵押 100 tUSD · 债务 50 tCREDIT', restricted ? '45%' : '75%', restricted],
+            ['借款与退出', '允许还款 · 有债务时要求提取后满足 LTV', restricted ? '停止新增借款' : '可新增借款', restricted],
+          ];
+        },
+      },
+      vault: {
+        title: '同一信号，两种 Vault 策略',
+        receipts: scenario.receipts,
+        stages: [
+          { action:'回放风险信号', explain:'Vault A 在演示基线时允许存入，已存入 10 tUSD。' },
+          { action:'检查两笔存款', explain:'同一风险信号发布到 Registry。Vault A 禁止新增，Vault B 仍接收存款。' },
+          { action:'检查 Vault A 提取', explain:'Vault A 的 1 tUSD 新增存款失败。Vault B 的 2 tUSD 存款成功。' },
+          { action:'从头回放', explain:'风险信号有效期间，Vault A 仍成功提取 3 tUSD。' },
+        ],
+        timeline: [
+          ['before','Vault A 初始存入 10 tUSD',0],
+          ['alert','Registry 发布风险信号',1],
+          ['blocked','Vault A 新增存款回退',2,true],
+          ['observe','Vault B 存入 2 tUSD',2],
+          ['exit','Vault A 提取 3 tUSD',3],
+        ],
+        rows(step) {
+          return [
+            ['Vault A · 限制新增敞口', (step === 3 ? '7' : '10') + ' tUSD · 提取可用', step > 0 ? '拒绝新增' : '允许存入', step > 0],
+            ['Vault B · 仅观察信号', (step >= 2 ? '2' : '0') + ' tUSD · 策略保持开放', '允许存入', false],
+          ];
+        },
+      },
+    };
+    let selected = 'lending';
     let step = 0;
     function render() {
+      const profile = profiles[selected];
       const restricted = step > 0;
+      const verified = profile.receipts != null;
+      find('mode').textContent = verified ? '历史回放 · Monad 测试网回执' : '历史回放 · 本地演示';
+      find('proof-title').textContent = verified ? '已核验测试网交易' : '本地演示步骤';
+      find('scenario-title').textContent = profile.title;
       find('signal').textContent = restricted ? '限制新增敞口' : '演示基线 · 开放';
       find('signal').classList.toggle('restricted', restricted);
-      find('explain').textContent = stages[step].explain;
-      find('a-status').textContent = restricted ? '拒绝新增' : '允许存入';
-      find('a-status').classList.toggle('warn', restricted);
-      find('a-description').textContent = (step === 3 ? '7' : '10') + ' tUSD · 提取可用';
-      find('b-status').textContent = '允许存入';
-      find('b-description').textContent = (step >= 2 ? '2' : '0') + ' tUSD · 策略保持开放';
-      find('advance').textContent = stages[step].action;
-      find('reset').hidden = step === 0 || step === stages.length - 1;
-      find('progress').textContent = '步骤 ' + (step + 1) + ' / ' + stages.length;
+      find('explain').textContent = profile.stages[step].explain;
+      for (const [index, [title, description, status, warning]] of profile.rows(step).entries()) {
+        const row = index === 0 ? 'a' : 'b';
+        find(row + '-title').textContent = title;
+        find(row + '-description').textContent = description;
+        find(row + '-status').textContent = status;
+        find(row + '-status').classList.toggle('warn', warning);
+      }
+      find('advance').textContent = profile.stages[step].action;
+      find('reset').hidden = step === 0 || step === profile.stages.length - 1;
+      find('progress').textContent = '步骤 ' + (step + 1) + ' / ' + profile.stages.length;
       const list = find('events');
       list.replaceChildren();
-      for (const [key, title, threshold] of timeline) {
+      for (const [key, title, threshold, rejected] of profile.timeline) {
         const row = document.createElement('li');
         const label = document.createElement('span');
         label.textContent = title;
         row.append(label);
         if (step >= threshold) {
-          row.className = key === 'blocked' ? 'reverted' : 'done';
-          const tx = scenario.receipts?.transactions[key];
+          row.className = rejected ? 'reverted' : 'done';
+          const tx = profile.receipts?.transactions[key];
           if (tx) {
             const link = document.createElement('a');
             link.href = explorer + tx.hash;
             link.target = '_blank';
             link.rel = 'noopener';
             link.textContent = '查看交易';
+            link.setAttribute('aria-label', title + ' · 查看交易');
             row.append(link);
           }
         }
         list.append(row);
       }
+      for (const name of Object.keys(profiles)) {
+        find('choose-' + name).setAttribute('aria-pressed', String(name === selected));
+      }
     }
-    find('advance').addEventListener('click', () => {step = (step + 1) % stages.length; render();});
-    find('reset').addEventListener('click', () => {step = 0; render(); find('advance').focus();});
+    for (const name of Object.keys(profiles)) {
+      find('choose-' + name).addEventListener('click', () => { selected = name; step = 0; render(); });
+    }
+    find('advance').addEventListener('click', () => { step = (step + 1) % profiles[selected].stages.length; render(); });
+    find('reset').addEventListener('click', () => { step = 0; render(); find('advance').focus(); });
     render();
   </script>
 </body>

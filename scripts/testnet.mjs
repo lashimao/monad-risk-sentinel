@@ -6,12 +6,15 @@ import { createPublicClient, custom, encodeDeployData, encodeFunctionData, kecca
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { monadTestnet } from 'viem/chains';
 import { compile } from './compile.mjs';
+import { runLendingReplay } from './lending-replay.mjs';
 
-const rpcUrl = 'https://testnet-rpc.monad.xyz';
+const lending = process.argv.includes('--lending');
+
+const rpcUrl = process.env.MONAD_TESTNET_RPC || 'https://testnet-rpc.monad.xyz';
 const run = promisify(execFile);
 const local = new URL('../.testnet/', import.meta.url);
 const keyFile = new URL('replay-key', local);
-const stateFile = new URL('transactions.json', local);
+const stateFile = new URL(lending ? 'transactions-lending.json' : 'transactions.json', local);
 const finalFile = new URL('../evidence/testnet-receipts.json', import.meta.url);
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -68,7 +71,7 @@ try {
   operations = {};
 }
 async function saveState() {
-  const tmp = new URL('transactions.tmp', local);
+  const tmp = new URL(stateFile.href + '.tmp');
   await writeFile(tmp, JSON.stringify(operations, null, 2) + '\n', { mode: 0o600 });
   await rename(tmp, stateFile);
 }
@@ -117,11 +120,18 @@ async function transact(name, prepare, expected = 'success') {
     if (error.name !== 'TransactionNotFoundError') throw error;
   }
   if (!existing) {
-    try {
-      const accepted = await client.sendRawTransaction({ serializedTransaction: raw });
-      assert.equal(accepted, hash, name);
-    } catch (error) {
-      console.error(name, 'broadcast:', String(error.details || error.shortMessage || error.name).slice(0, 200));
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const accepted = await client.sendRawTransaction({ serializedTransaction: raw });
+        assert.equal(accepted, hash, name);
+        break;
+      } catch (error) {
+        const reason = String(error.details || error.shortMessage || error.name).slice(0, 200);
+        console.error(name, 'broadcast:', reason);
+        // The saved signed transaction always has the same hash and nonce.
+        if (!reason.includes('transport failed') || attempt === 2) break;
+        await pause(700 * (attempt + 1));
+      }
     }
   }
   console.log(name, hash);
@@ -149,55 +159,64 @@ async function write(step, address, abi, functionName, args, { revert = false } 
 }
 
 const admin = account.address;
-const registry = await deploy('registry', 'RiskRegistry', [admin]);
-const token = await deploy('testToken', 'ReplayUSD', [admin]);
-const protectedVault = await deploy('protectedVault', 'ProtectedDemoVault', [token.address, registry.address, true]);
-const observerVault = await deploy('observerVault', 'ProtectedDemoVault', [token.address, registry.address, false]);
-const registryAbi = artifacts.RiskRegistry.abi;
-const tokenAbi = artifacts.ReplayUSD.abi;
-const vaultAbi = artifacts.ProtectedDemoVault.abi;
-const now = (await client.getBlock()).timestamp;
-const expiry = now + 6n * 24n * 60n * 60n;
-const baseline = await write('baseline', registry.address, registryAbi, 'publish',
-  [token.address, 1, baselineHash, expiry, 0n]);
-await write('approveProtected', token.address, tokenAbi, 'approve', [protectedVault.address, 15_000_000n]);
-const before = await write('beforeDeposit', protectedVault.address, vaultAbi, 'deposit', [10_000_000n, admin]);
-const alert = await write('alert', registry.address, registryAbi, 'publish',
-  [token.address, 2, evidenceHash, expiry, 1n]);
-const blocked = await write('blockedDeposit', protectedVault.address, vaultAbi, 'deposit',
-  [1_000_000n, admin], { revert: true });
-await write('approveObserver', token.address, tokenAbi, 'approve', [observerVault.address, 2_000_000n]);
-const observe = await write('observerDeposit', observerVault.address, vaultAbi, 'deposit', [2_000_000n, admin]);
-const exit = await write('exitWithdraw', protectedVault.address, vaultAbi, 'withdraw', [3_000_000n, admin, admin]);
-const fetch = (address, abi, functionName, args = []) =>
-  client.readContract({ address, abi, functionName, args });
-const [signal, protectedAssets, observerAssets, gate, observerGate, registryCode, vaultCode] = await Promise.all([
-  fetch(registry.address, registryAbi, 'signals', [token.address]),
-  fetch(protectedVault.address, vaultAbi, 'totalAssets'),
-  fetch(observerVault.address, vaultAbi, 'totalAssets'),
-  fetch(protectedVault.address, vaultAbi, 'depositsAllowed'),
-  fetch(observerVault.address, vaultAbi, 'depositsAllowed'),
-  client.getCode({address: registry.address}),
-  client.getCode({address: protectedVault.address}),
-]);
-assert.ok(registryCode && vaultCode);
-assert.equal(signal[0], evidenceHash);
-assert.equal(signal[3], 2n);
-assert.equal(signal[4], 2);
-assert.equal(protectedAssets, 7_000_000n);
-assert.equal(observerAssets, 2_000_000n);
-assert.equal(gate, false);
-assert.equal(observerGate, true);
-const output = {
-  network: 'Monad Testnet', chainId: 10143, reporter: admin,
-  contracts: { registry, token, protectedVault, observerVault },
-  transactions: { baseline, before, alert, blocked, observe, exit },
-  evidenceHash, verified: {
-    revision: Number(signal[3]), status: Number(signal[4]),
-    blockTime: Number(signal[1]), validUntil: Number(signal[2]),
-    protectedAssets: protectedAssets.toString(), observerAssets: observerAssets.toString(),
-    protectedDepositsAllowed: gate, observerDepositsAllowed: observerGate,
-  },
-};
-await writeFile(finalFile, JSON.stringify(output, null, 2) + '\n');
-console.log('Confirmed: valid evidence hash; A deposit reverted; B deposit and A withdrawal succeeded.');
+if (lending) {
+  Object.assign(artifacts, compile('src/LendingDemo.sol').artifacts);
+  await runLendingReplay({ admin, client, artifacts, deploy, write, baselineHash, evidenceHash });
+} else {
+  await runVaultReplay();
+}
+
+async function runVaultReplay() {
+  const registry = await deploy('registry', 'RiskRegistry', [admin]);
+  const token = await deploy('testToken', 'ReplayUSD', [admin]);
+  const protectedVault = await deploy('protectedVault', 'ProtectedDemoVault', [token.address, registry.address, true]);
+  const observerVault = await deploy('observerVault', 'ProtectedDemoVault', [token.address, registry.address, false]);
+  const registryAbi = artifacts.RiskRegistry.abi;
+  const tokenAbi = artifacts.ReplayUSD.abi;
+  const vaultAbi = artifacts.ProtectedDemoVault.abi;
+  const now = (await client.getBlock()).timestamp;
+  const expiry = now + 6n * 24n * 60n * 60n;
+  const baseline = await write('baseline', registry.address, registryAbi, 'publish',
+    [token.address, 1, baselineHash, expiry, 0n]);
+  await write('approveProtected', token.address, tokenAbi, 'approve', [protectedVault.address, 15_000_000n]);
+  const before = await write('beforeDeposit', protectedVault.address, vaultAbi, 'deposit', [10_000_000n, admin]);
+  const alert = await write('alert', registry.address, registryAbi, 'publish',
+    [token.address, 2, evidenceHash, expiry, 1n]);
+  const blocked = await write('blockedDeposit', protectedVault.address, vaultAbi, 'deposit',
+    [1_000_000n, admin], { revert: true });
+  await write('approveObserver', token.address, tokenAbi, 'approve', [observerVault.address, 2_000_000n]);
+  const observe = await write('observerDeposit', observerVault.address, vaultAbi, 'deposit', [2_000_000n, admin]);
+  const exit = await write('exitWithdraw', protectedVault.address, vaultAbi, 'withdraw', [3_000_000n, admin, admin]);
+  const fetch = (address, abi, functionName, args = []) =>
+    client.readContract({ address, abi, functionName, args });
+  const [signal, protectedAssets, observerAssets, gate, observerGate, registryCode, vaultCode] = await Promise.all([
+    fetch(registry.address, registryAbi, 'signals', [token.address]),
+    fetch(protectedVault.address, vaultAbi, 'totalAssets'),
+    fetch(observerVault.address, vaultAbi, 'totalAssets'),
+    fetch(protectedVault.address, vaultAbi, 'depositsAllowed'),
+    fetch(observerVault.address, vaultAbi, 'depositsAllowed'),
+    client.getCode({address: registry.address}),
+    client.getCode({address: protectedVault.address}),
+  ]);
+  assert.ok(registryCode && vaultCode);
+  assert.equal(signal[0], evidenceHash);
+  assert.equal(signal[3], 2n);
+  assert.equal(signal[4], 2);
+  assert.equal(protectedAssets, 7_000_000n);
+  assert.equal(observerAssets, 2_000_000n);
+  assert.equal(gate, false);
+  assert.equal(observerGate, true);
+  const output = {
+    network: 'Monad Testnet', chainId: 10143, reporter: admin,
+    contracts: { registry, token, protectedVault, observerVault },
+    transactions: { baseline, before, alert, blocked, observe, exit },
+    evidenceHash, verified: {
+      revision: Number(signal[3]), status: Number(signal[4]),
+      blockTime: Number(signal[1]), validUntil: Number(signal[2]),
+      protectedAssets: protectedAssets.toString(), observerAssets: observerAssets.toString(),
+      protectedDepositsAllowed: gate, observerDepositsAllowed: observerGate,
+    },
+  };
+  await writeFile(finalFile, JSON.stringify(output, null, 2) + '\n');
+  console.log('Confirmed: valid evidence hash; A deposit reverted; B deposit and A withdrawal succeeded.');
+}

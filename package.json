@@ -8,7 +8,8 @@
     "build": "node scripts/build.mjs",
     "deploy:testnet": "node scripts/testnet.mjs",
     "serve": "python3 -m http.server 8789 --bind 127.0.0.1 --directory dist",
-    "snapshot": "node scripts/snapshot.mjs"
+    "snapshot": "node scripts/snapshot.mjs",
+    "deploy:lending-testnet": "node scripts/testnet.mjs --lending"
   },
   "dependencies": {
     "@openzeppelin/contracts": "5.4.0",

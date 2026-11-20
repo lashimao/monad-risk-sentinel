@@ -2,9 +2,7 @@ import { readFileSync } from 'node:fs';
 import { posix } from 'node:path';
 import solc from 'solc';
 
-const sourceName = 'src/Sentinel.sol';
-
-export function compile() {
+export function compile(sourceName = 'src/Sentinel.sol') {
   const sources = {};
   function addSource(name) {
     if (sources[name]) return;

@@ -29,6 +29,7 @@ try {
   const [admin, stranger] = accounts;
   const owner = createWalletClient({ account: admin, transport, chain });
   const { artifacts } = compile();
+  Object.assign(artifacts, compile('src/LendingDemo.sol').artifacts);
   async function receipt(hash) {
     const result = await client.waitForTransactionReceipt({ hash, timeout: 8000 });
     assert.equal(result.status, 'success');
@@ -91,6 +92,40 @@ try {
   await send(vault, 'withdraw', [1_000_000n, admin, admin]);
   assert.equal(await read(vault, 'totalAssets'), 8_000_000n);
   console.log('PASS expiry changes active signal to unknown, preserving withdrawals');
+
+  const credit = await deploy('ReplayCredit', [admin]);
+  const pool = await deploy('ReferenceLendingPool', [token.address, credit.address, registry.address]);
+  const unit = 1_000_000n;
+  const at = (await client.getBlock()).timestamp;
+  const lendingSignal = (status, revision) => [token.address, status, hash, at + 3600n, revision];
+  await send(credit, 'transfer', [pool.address, 200n * unit]);
+  await send(token, 'approve', [pool.address, 100n * unit]);
+  await send(pool, 'depositCollateral', [100n * unit]);
+  assert.deepEqual(await read(pool, 'policy'), [4500, false]);
+  await assert.rejects(simulate(pool, 'borrow', [unit]), /BorrowingPaused/);
+
+  await send(registry, 'publish', lendingSignal(1, 3n));
+  assert.deepEqual(await read(pool, 'policy'), [7500, true]);
+  await assert.rejects(simulate(pool, 'borrow', [75n * unit + 1n]), /BorrowLimitExceeded/);
+  await send(pool, 'borrow', [50n * unit]);
+  assert.deepEqual(await read(pool, 'positions', [admin]), [100n * unit, 50n * unit]);
+
+  await send(registry, 'publish', lendingSignal(2, 4n));
+  assert.deepEqual(await read(pool, 'policy'), [4500, false]);
+  await assert.rejects(simulate(pool, 'borrow', [unit]), /BorrowingPaused/);
+  await assert.rejects(simulate(pool, 'withdrawCollateral', [unit]), /UnsafeWithdrawal/);
+  await send(credit, 'approve', [pool.address, 50n * unit]);
+  await assert.rejects(simulate(pool, 'repay', [50n * unit + 1n]), /InvalidAmount/);
+  await send(pool, 'repay', [20n * unit]);
+  await send(pool, 'withdrawCollateral', [20n * unit]);
+  assert.deepEqual(await read(pool, 'positions', [admin]), [80n * unit, 30n * unit]);
+  assert.equal(await read(credit, 'balanceOf', [pool.address]), 170n * unit);
+
+  await send(pool, 'repay', [30n * unit]);
+  await send(pool, 'withdrawCollateral', [80n * unit]);
+  assert.deepEqual(await read(pool, 'positions', [admin]), [0n, 0n]);
+  console.log('PASS LTV 75% → 45%, new borrowing paused, repayment and solvent exits work');
+
 } finally {
   node.kill();
 }
