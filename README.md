@@ -8,7 +8,8 @@
 
 - [公开源码](https://github.com/lashimao/monad-risk-sentinel)
 - [在线 Demo · 团队前端](https://lashimao.github.io/monad-risk-sentinel/team/#testnet-replay)
-- [参赛演示视频 · 1080p MP4](https://github.com/lashimao/monad-risk-sentinel/releases/download/blitz-demo/Monad_Risk_Sentinel_Demo.mp4)
+- [参赛视频 · 约 3 分钟 · 台湾国语](https://github.com/lashimao/monad-risk-sentinel/releases/download/blitz-demo/Monad_Risk_Sentinel_Demo_3min_ZHTW.mp4)
+- [核心功能截图](docs/Monad_Risk_Sentinel_Core.png)
 - [Monad 测试网借贷回执](https://github.com/lashimao/monad-risk-sentinel/blob/main/evidence/lending-testnet-receipts.json)
 
 评委打开在线 Demo 后，从「链上借贷策略回放」开始即可验证 LTV 75% → 45%、新增借款回退，以及还款后提取抵押品。源码、演示与回执无需登录访问。
@@ -27,6 +28,12 @@
 切到「双 Vault 策略」可查看原来的对照。同一份风险状态会让采用限制策略的 Vault 拒绝新增存款，采用观察策略的 Vault 仍可存入。限制期间，原 Vault 中的测试资产仍可提取。
 
 [风险发布](https://testnet.monadvision.com/tx/0xe725138dd87681e7f6c74ce4a064a62848c00a0e4d84702a34762884632eadda) · [A 新增回退](https://testnet.monadvision.com/tx/0xe5cb4d0765134cbcd35c8e3a7523e904ee666f0b52f7946b26103819e841248d) · [B 存入](https://testnet.monadvision.com/tx/0xf7ebda132c20e632f08e7034f5fbdf609b775d0a4dd7a8820fdd39c924da90ff) · [A 退出](https://testnet.monadvision.com/tx/0x33176713b93b524beb06fef780fe1a59d6326721de9779f3f9a5cbb99ba3016a)
+
+## 主要功能与技术栈
+
+- 团队前端用 HTML、CSS 和 JavaScript 展示地缘制度事件、托管方、稳定币及借贷池的风险传导。该场景使用固定模拟数据。
+- Solidity 风险登记合约保存风险状态、证据哈希和有效期。示例借贷池读取信号后调整 LTV，已验证停借、还款和符合抵押要求的提取。
+- 使用 solc 编译、Anvil 跑本地合约测试、viem 读取 Monad 测试网回执。公开 Demo 由 GitHub Pages 部署，打开即可使用。
 
 ## 本地演示
 
