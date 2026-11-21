@@ -8,6 +8,7 @@
 
 - [公开源码](https://github.com/lashimao/monad-risk-sentinel)
 - [在线 Demo · 团队前端](https://lashimao.github.io/monad-risk-sentinel/team/#testnet-replay)
+- [参赛演示视频 · 1080p MP4](https://github.com/lashimao/monad-risk-sentinel/releases/download/blitz-demo/Monad_Risk_Sentinel_Demo.mp4)
 - [Monad 测试网借贷回执](https://github.com/lashimao/monad-risk-sentinel/blob/main/evidence/lending-testnet-receipts.json)
 
 评委打开在线 Demo 后，从「链上借贷策略回放」开始即可验证 LTV 75% → 45%、新增借款回退，以及还款后提取抵押品。源码、演示与回执无需登录访问。
