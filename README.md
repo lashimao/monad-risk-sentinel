@@ -8,7 +8,7 @@
 
 - [公开源码](https://github.com/lashimao/monad-risk-sentinel)
 - [在线 Demo · 团队前端](https://lashimao.github.io/monad-risk-sentinel/team/#testnet-replay)
-- [参赛视频 · 约 3 分钟 · 台湾国语](https://github.com/lashimao/monad-risk-sentinel/releases/download/blitz-demo/Monad_Risk_Sentinel_Demo_3min_ZHTW.mp4)
+- [参赛视频 · 约 3 分钟 · 普通话女声和简体字幕](https://github.com/lashimao/monad-risk-sentinel/releases/download/blitz-demo/Monad_Risk_Sentinel_Demo_3min_ZHCN_Female.mp4)
 - [核心功能截图](docs/Monad_Risk_Sentinel_Core.png)
 - [Monad 测试网借贷回执](https://github.com/lashimao/monad-risk-sentinel/blob/main/evidence/lending-testnet-receipts.json)
 
